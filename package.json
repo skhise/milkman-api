@@ -1,0 +1,49 @@
+{
+  "name": "milkman-api",
+  "version": "0.1.0",
+  "description": "Module-based Milkman backend API",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "node dist/server.js",
+    "migrate": "npm run build && knex --knexfile knexfile.js migrate:latest",
+    "migrate:rollback": "npm run build && knex --knexfile knexfile.js migrate:rollback",
+    "lint": "eslint \"src/**/*.ts\""
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/morgan": "^1.9.7",
+    "@types/node": "^20.16.11",
+    "@types/node-cron": "^3.0.11",
+    "@types/pdfkit": "^0.13.6",
+    "ts-node-dev": "^2.0.0"
+  },
+  "dependencies": {
+    "@react-navigation/bottom-tabs": "^7.8.5",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.7.0",
+    "get-stream": "^8.0.1",
+    "helmet": "^6.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.11.3",
+    "node-cron": "^3.0.3",
+    "objection": "^3.1.4",
+    "pdfkit": "^0.15.0",
+    "react-native-linear-gradient": "^2.8.3",
+    "react-native-vector-icons": "^10.3.0",
+    "zod": "^3.23.8"
+  }
+}
