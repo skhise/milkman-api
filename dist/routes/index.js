@@ -1,0 +1,37 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_routes_1 = __importDefault(require("../modules/auth/auth.routes"));
+const seller_routes_1 = __importDefault(require("../modules/sellers/seller.routes"));
+const customer_routes_1 = __importDefault(require("../modules/customers/customer.routes"));
+const product_routes_1 = __importDefault(require("../modules/products/product.routes"));
+const dailyEntry_routes_1 = __importDefault(require("../modules/dailyEntries/dailyEntry.routes"));
+const billing_routes_1 = __importDefault(require("../modules/billing/billing.routes"));
+const payment_routes_1 = __importDefault(require("../modules/payments/payment.routes"));
+const report_routes_1 = __importDefault(require("../modules/reports/report.routes"));
+const notification_routes_1 = __importDefault(require("../modules/notifications/notification.routes"));
+const subscription_routes_1 = __importDefault(require("../modules/subscriptions/subscription.routes"));
+const ads_routes_1 = __importDefault(require("../modules/ads/ads.routes"));
+const admin_routes_1 = __importDefault(require("../modules/admin/admin.routes"));
+const user_routes_1 = __importDefault(require("../modules/users/user.routes"));
+const wallet_routes_1 = __importDefault(require("../modules/wallet/wallet.routes"));
+const router = (0, express_1.Router)();
+router.use('/auth', auth_routes_1.default);
+router.use('/sellers', seller_routes_1.default);
+router.use('/customers', customer_routes_1.default);
+router.use('/products', product_routes_1.default);
+router.use('/daily-entries', dailyEntry_routes_1.default);
+router.use('/billing', billing_routes_1.default);
+router.use('/payments', payment_routes_1.default);
+router.use('/reports', report_routes_1.default);
+router.use('/notifications', notification_routes_1.default);
+router.use('/subscriptions', subscription_routes_1.default);
+router.use('/ads', ads_routes_1.default);
+router.use('/admin', admin_routes_1.default);
+router.use('/users', user_routes_1.default);
+router.use('/wallet', wallet_routes_1.default);
+exports.default = router;
+//# sourceMappingURL=index.js.map

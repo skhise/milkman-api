@@ -1,0 +1,1 @@
+{"version":3,"file":"202501010002_make_users_email_optional.d.ts","sourceRoot":"","sources":["../../../src/database/migrations/202501010002_make_users_email_optional.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,IAAI,EAAE,MAAM,MAAM,CAAC;AAEjC,wBAAsB,EAAE,CAAC,IAAI,EAAE,IAAI,GAAG,OAAO,CAAC,IAAI,CAAC,CA0BlD;AAED,wBAAsB,IAAI,CAAC,IAAI,EAAE,IAAI,GAAG,OAAO,CAAC,IAAI,CAAC,CAcpD"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"202411200012_create_notifications_table.d.ts","sourceRoot":"","sources":["../../../src/database/migrations/202411200012_create_notifications_table.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,IAAI,EAAE,MAAM,MAAM,CAAC;AAEjC,wBAAsB,EAAE,CAAC,IAAI,EAAE,IAAI,GAAG,OAAO,CAAC,IAAI,CAAC,CAelD;AAED,wBAAsB,IAAI,CAAC,IAAI,EAAE,IAAI,GAAG,OAAO,CAAC,IAAI,CAAC,CAEpD"}

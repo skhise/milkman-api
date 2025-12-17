@@ -1,0 +1,1 @@
+{"version":3,"file":"202501010006_add_fcm_token_to_users.d.ts","sourceRoot":"","sources":["../../../src/database/migrations/202501010006_add_fcm_token_to_users.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,IAAI,EAAE,MAAM,MAAM,CAAC;AAEjC,wBAAsB,EAAE,CAAC,IAAI,EAAE,IAAI,GAAG,OAAO,CAAC,IAAI,CAAC,CAKlD;AAED,wBAAsB,IAAI,CAAC,IAAI,EAAE,IAAI,GAAG,OAAO,CAAC,IAAI,CAAC,CAKpD"}
