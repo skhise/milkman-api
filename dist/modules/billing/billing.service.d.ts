@@ -138,6 +138,37 @@ declare class BillingService {
             billId?: never;
         })[];
     }>;
+    /**
+     * Generate monthly bills for all sellers for a specific month/year
+     * This is called by a cron job to automatically generate bills
+     */
+    generateMonthlyBillsForAllSellers(month: string, year: string): Promise<{
+        month: string;
+        year: string;
+        sellersProcessed: number;
+        results: ({
+            month: string;
+            year: string;
+            results: ({
+                customerId: any;
+                billId: any;
+                success: boolean;
+                error?: never;
+            } | {
+                customerId: any;
+                success: boolean;
+                error: string;
+                billId?: never;
+            })[];
+            sellerId: any;
+            error?: never;
+        } | {
+            sellerId: any;
+            month: string;
+            year: string;
+            error: string;
+        })[];
+    }>;
     getBillWithItems(billId: string): Promise<{
         customerName: any;
         customerMobile: any;

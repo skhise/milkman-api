@@ -123,6 +123,13 @@ class AdsService {
         }
         return rows.map((row) => this.mapRow(row));
     }
+    async listAll() {
+        const db = (0, connection_1.getDb)();
+        const rows = await db('ads')
+            .orderBy('created_at', 'desc')
+            .select('*');
+        return rows.map((row) => this.mapRow(row));
+    }
     async create(payload) {
         const data = adSchema.parse(payload);
         const db = (0, connection_1.getDb)();
@@ -167,6 +174,15 @@ class AdsService {
         });
         const row = await db('ads').where({ id: adId }).first();
         return this.mapRow(row);
+    }
+    async delete(adId) {
+        const db = (0, connection_1.getDb)();
+        const existing = await db('ads').where({ id: adId }).first();
+        if (!existing) {
+            throw new Error('Ad not found');
+        }
+        await db('ads').where({ id: adId }).delete();
+        return { success: true };
     }
     async recordClick(adId, userId, userRole) {
         const db = (0, connection_1.getDb)();

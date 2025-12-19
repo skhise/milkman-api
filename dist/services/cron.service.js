@@ -7,6 +7,8 @@ exports.cronService = void 0;
 const node_cron_1 = __importDefault(require("node-cron"));
 const dailyEntry_service_1 = require("../modules/dailyEntries/dailyEntry.service");
 const customer_service_1 = require("../modules/customers/customer.service");
+const billing_service_1 = require("../modules/billing/billing.service");
+const seller_service_1 = require("../modules/sellers/seller.service");
 class CronService {
     constructor() {
         this.jobs = [];
@@ -48,6 +50,48 @@ class CronService {
         this.jobs.push(clearExpiredPausesJob);
         clearExpiredPausesJob.start();
         console.log('[Cron] Expired pause cleanup job scheduled (runs at 1:00 AM daily)');
+        // Run monthly on the 1st at 2:00 AM to generate bills for the previous month
+        // This generates bills for all sellers for the previous month
+        const billGenerationJob = node_cron_1.default.schedule('0 2 1 * *', async () => {
+            console.log('[Cron] Starting monthly bill generation...');
+            try {
+                const today = new Date();
+                // Calculate previous month (if current month is January (0), previous is December (12))
+                const currentMonth = today.getMonth(); // 0-11 (0 = January)
+                const previousMonth = currentMonth === 0 ? 12 : currentMonth; // If January, previous month is December
+                const previousYear = currentMonth === 0 ? today.getFullYear() - 1 : today.getFullYear();
+                const month = String(previousMonth).padStart(2, '0');
+                const year = String(previousYear);
+                const result = await billing_service_1.billingService.generateMonthlyBillsForAllSellers(month, year);
+                console.log('[Cron] Monthly bill generation completed:', result);
+            }
+            catch (error) {
+                console.error('[Cron] Error generating monthly bills:', error);
+            }
+        }, {
+            scheduled: false,
+            timezone: 'Asia/Kolkata',
+        });
+        this.jobs.push(billGenerationJob);
+        billGenerationJob.start();
+        console.log('[Cron] Monthly bill generation job scheduled (runs on 1st of each month at 2:00 AM)');
+        // Run daily at 3:00 AM to expire subscriptions that have passed their end date
+        const planExpiryJob = node_cron_1.default.schedule('0 3 * * *', async () => {
+            console.log('[Cron] Starting subscription plan expiry check...');
+            try {
+                const result = await seller_service_1.sellerService.expireSubscriptions();
+                console.log('[Cron] Subscription plan expiry check completed:', result);
+            }
+            catch (error) {
+                console.error('[Cron] Error expiring subscriptions:', error);
+            }
+        }, {
+            scheduled: false,
+            timezone: 'Asia/Kolkata',
+        });
+        this.jobs.push(planExpiryJob);
+        planExpiryJob.start();
+        console.log('[Cron] Subscription plan expiry job scheduled (runs at 3:00 AM daily)');
     }
     stop() {
         this.jobs.forEach((job) => job.stop());

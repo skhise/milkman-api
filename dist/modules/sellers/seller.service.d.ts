@@ -96,6 +96,14 @@ declare class SellerService {
     updateSubscription(sellerId: string, payload: unknown): Promise<{
         message: string;
     }>;
+    /**
+     * Expire subscriptions that have passed their end date
+     * This is called by a cron job to automatically expire subscriptions
+     */
+    expireSubscriptions(): Promise<{
+        expiredCount: number;
+        expiredSubscriptions: number;
+    }>;
 }
 export declare const sellerService: SellerService;
 export {};

@@ -71,7 +71,7 @@ class BillingService {
     // For month 12: new Date(2024, 12, 0) = last day of month 11 (December) = Dec 31 ✓
     // For month 1: new Date(2024, 1, 0) = last day of month 0 (January) = Jan 31 ✓
     const endDate: string = new Date(year, month, 0).toISOString().split('T')[0]!;
-    
+
     // Calculate number of days in the month
     // Same logic: new Date(year, month, 0).getDate() gives days in the current month
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -373,19 +373,19 @@ class BillingService {
     } else {
       // Create new bill
       billId = randomUUID();
-      await db('bills').insert({
-        id: billId,
-        seller_id: sellerId,
-        customer_id: customerId,
-        month: params.month,
-        year: params.year,
+    await db('bills').insert({
+      id: billId,
+      seller_id: sellerId,
+      customer_id: customerId,
+      month: params.month,
+      year: params.year,
         status: billStatus,
-        total_amount: finalAmount,
-        total_quantity: totalQuantity,
-        previous_dues: previousDues,
-        gst_amount: gstAmount,
-        due_date: dueDate,
-      });
+      total_amount: finalAmount,
+      total_quantity: totalQuantity,
+      previous_dues: previousDues,
+      gst_amount: gstAmount,
+      due_date: dueDate,
+    });
     }
 
     // Insert bill items
@@ -840,7 +840,7 @@ class BillingService {
     doc.text(`Total Quantity: ${bill.totalQuantity.toFixed(2)} Litre(s)`);
     doc.text(`Subtotal: ₹${subtotal.toFixed(2)}`);
     if (bill.previousDues > 0) {
-      doc.text(`Previous Dues: ₹${bill.previousDues.toFixed(2)}`);
+    doc.text(`Previous Dues: ₹${bill.previousDues.toFixed(2)}`);
     }
     doc.text(`Grand Total: ₹${bill.totalAmount.toFixed(2)}`, { underline: true });
 

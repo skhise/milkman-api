@@ -15,8 +15,12 @@ declare class AdsService {
     private parseTargeting;
     private mapRow;
     listActive(): Promise<AdResponse[]>;
+    listAll(): Promise<AdResponse[]>;
     create(payload: unknown): Promise<AdResponse>;
     update(adId: string, payload: unknown): Promise<AdResponse>;
+    delete(adId: string): Promise<{
+        success: boolean;
+    }>;
     recordClick(adId: string, userId?: string, userRole?: string): Promise<{
         id: `${string}-${string}-${string}-${string}-${string}`;
         adId: string;

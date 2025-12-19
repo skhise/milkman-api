@@ -87,7 +87,7 @@ class AuthService {
             tokenPayload.sellerId = sellerId;
         }
         // Generate token
-        const token = jsonwebtoken_1.default.sign(tokenPayload, (0, getEnv_1.getEnv)('JWT_SECRET', 'super-secret'), { expiresIn: '12h' });
+        const token = jsonwebtoken_1.default.sign(tokenPayload, (0, getEnv_1.getEnv)('JWT_SECRET'), { expiresIn: '12h' });
         // Return token and user data
         return {
             token,
@@ -141,31 +141,24 @@ class AuthService {
         if (user.status !== 'active') {
             throw new errorHandler_1.ApiError('Account is not active', 403);
         }
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        // Generate unique reference
+        // Generate unique reference for PIN reset
         const reference = (0, crypto_1.randomUUID)();
         // Invalidate any existing pending tokens for this user
         await db('pin_reset_tokens')
             .where({ user_id: user.id, status: 'pending' })
             .update({ status: 'expired' });
-        // Store OTP in database - use database date function for expiration
+        // Store reset token in database - valid for 10 minutes
         await db('pin_reset_tokens').insert({
             id: (0, crypto_1.randomUUID)(),
             user_id: user.id,
-            otp: otp,
+            otp: null, // No OTP needed
             reference: reference,
             status: 'pending',
             expires_at: db.raw('DATE_ADD(NOW(), INTERVAL 10 MINUTE)'),
         });
-        // TODO: Send OTP via email or SMS
-        // For now, we'll return the OTP in development (remove in production)
-        // In production, send OTP via email/SMS and don't return it
         return {
-            message: 'Reset instructions sent',
+            message: 'Mobile number verified. You can now reset your PIN.',
             reference: reference,
-            // Remove this in production - only for development/testing
-            otp: process.env.NODE_ENV === 'development' ? otp : undefined,
         };
     }
     async verifyOtp(payload) {
@@ -213,9 +206,7 @@ class AuthService {
             if (resetToken.status === 'expired') {
                 throw new errorHandler_1.ApiError('Reset token has expired. Please request a new PIN reset', 400);
             }
-            if (resetToken.status === 'verified') {
-                throw new errorHandler_1.ApiError('OTP has already been verified. You can now reset your PIN', 400);
-            }
+            // Allow PIN reset directly without OTP verification
             throw new errorHandler_1.ApiError('Invalid token status. Please request a new PIN reset', 400);
         }
         // Verify OTP
@@ -239,7 +230,7 @@ class AuthService {
             sub: resetToken.user_id,
             type: 'pin_reset',
             reference: data.reference,
-        }, (0, getEnv_1.getEnv)('JWT_SECRET', 'super-secret'), { expiresIn: '10m' });
+        }, (0, getEnv_1.getEnv)('JWT_SECRET'), { expiresIn: '10m' });
         return {
             reference: data.reference,
             token: tempToken,
@@ -299,29 +290,22 @@ class AuthService {
         catch (error) {
             throw new errorHandler_1.ApiError('Database connection error', 500);
         }
-        // Find the reset token by reference - must be verified status
+        // Find the reset token by reference
         const resetToken = await db('pin_reset_tokens')
-            .where({ reference: data.reference, status: 'verified' })
+            .where({ reference: data.reference })
             .first();
         if (!resetToken) {
-            // Check if token exists but in different status for better error messages
-            const existingToken = await db('pin_reset_tokens')
-                .where({ reference: data.reference })
-                .first();
-            if (!existingToken) {
-                throw new errorHandler_1.ApiError('Invalid reset token. Please request a new PIN reset', 400);
-            }
-            // Provide specific error messages based on status
-            if (existingToken.status === 'used') {
-                throw new errorHandler_1.ApiError('This reset token has already been used. Please request a new PIN reset', 400);
-            }
-            if (existingToken.status === 'expired') {
-                throw new errorHandler_1.ApiError('Reset token has expired. Please request a new PIN reset', 400);
-            }
-            if (existingToken.status === 'pending') {
-                throw new errorHandler_1.ApiError('Please verify your OTP first before resetting your PIN', 400);
-            }
-            throw new errorHandler_1.ApiError('Invalid reset token. Please verify your OTP first or request a new PIN reset', 400);
+            throw new errorHandler_1.ApiError('Invalid reset token. Please request a new PIN reset', 400);
+        }
+        // Check token status - allow PIN reset if status is 'pending' (no OTP verification needed)
+        if (resetToken.status === 'used') {
+            throw new errorHandler_1.ApiError('This reset token has already been used. Please request a new PIN reset', 400);
+        }
+        if (resetToken.status === 'expired') {
+            throw new errorHandler_1.ApiError('Reset token has expired. Please request a new PIN reset', 400);
+        }
+        if (resetToken.status !== 'pending') {
+            throw new errorHandler_1.ApiError('Invalid reset token. Please request a new PIN reset', 400);
         }
         // Check if token has expired using database time comparison
         const isExpired = await db('pin_reset_tokens')
@@ -334,10 +318,6 @@ class AuthService {
                 .where({ id: resetToken.id })
                 .update({ status: 'expired' });
             throw new errorHandler_1.ApiError('Reset token has expired. Please request a new PIN reset', 400);
-        }
-        // Check if token has already been used (double-check)
-        if (resetToken.status === 'used') {
-            throw new errorHandler_1.ApiError('This reset token has already been used. Please request a new PIN reset', 400);
         }
         // Fetch user from database
         const user = await db('users')

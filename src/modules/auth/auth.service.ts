@@ -340,16 +340,16 @@ class AuthService {
       .first();
 
     if (!resetToken) {
-      throw new ApiError('Invalid reset token. Please request a new PIN reset', 400);
-    }
-    
+        throw new ApiError('Invalid reset token. Please request a new PIN reset', 400);
+      }
+      
     // Check token status - allow PIN reset if status is 'pending' (no OTP verification needed)
     if (resetToken.status === 'used') {
-      throw new ApiError('This reset token has already been used. Please request a new PIN reset', 400);
-    }
+        throw new ApiError('This reset token has already been used. Please request a new PIN reset', 400);
+      }
     if (resetToken.status === 'expired') {
-      throw new ApiError('Reset token has expired. Please request a new PIN reset', 400);
-    }
+        throw new ApiError('Reset token has expired. Please request a new PIN reset', 400);
+      }
     if (resetToken.status !== 'pending') {
       throw new ApiError('Invalid reset token. Please request a new PIN reset', 400);
     }

@@ -537,6 +537,40 @@ class BillingService {
         }
         return { month, year, results };
     }
+    /**
+     * Generate monthly bills for all sellers for a specific month/year
+     * This is called by a cron job to automatically generate bills
+     */
+    async generateMonthlyBillsForAllSellers(month, year) {
+        const db = (0, connection_1.getDb)();
+        const sellers = await db('sellers')
+            .where({ status: 'Active' })
+            .select('id');
+        const allResults = [];
+        for (const seller of sellers) {
+            try {
+                const result = await this.generateMonthlyBillsForSeller(seller.id, month, year);
+                allResults.push({
+                    sellerId: seller.id,
+                    ...result,
+                });
+            }
+            catch (error) {
+                allResults.push({
+                    sellerId: seller.id,
+                    month,
+                    year,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                });
+            }
+        }
+        return {
+            month,
+            year,
+            sellersProcessed: sellers.length,
+            results: allResults,
+        };
+    }
     async getBillWithItems(billId) {
         const db = (0, connection_1.getDb)();
         try {

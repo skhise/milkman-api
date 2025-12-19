@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAdStats = exports.recordClick = exports.updateAd = exports.createAd = exports.listAds = void 0;
+exports.getAdStats = exports.deleteAd = exports.listAllAds = exports.recordClick = exports.updateAd = exports.createAd = exports.listAds = void 0;
 const ads_service_1 = require("./ads.service");
 const listAds = async (_req, res, next) => {
     try {
@@ -54,6 +54,26 @@ const recordClick = async (req, res, next) => {
     }
 };
 exports.recordClick = recordClick;
+const listAllAds = async (_req, res, next) => {
+    try {
+        const ads = await ads_service_1.adsService.listAll();
+        res.json(ads);
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.listAllAds = listAllAds;
+const deleteAd = async (req, res, next) => {
+    try {
+        const result = await ads_service_1.adsService.delete(req.params.adId);
+        res.json(result);
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.deleteAd = deleteAd;
 const getAdStats = async (req, res, next) => {
     try {
         const { adId } = req.params;

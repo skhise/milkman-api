@@ -19,7 +19,7 @@ const authenticate = (req, res, next) => {
             throw new errorHandler_1.ApiError('Authorization token required', 401);
         }
         try {
-            const decoded = jsonwebtoken_1.default.verify(token, (0, getEnv_1.getEnv)('JWT_SECRET', 'super-secret'));
+            const decoded = jsonwebtoken_1.default.verify(token, (0, getEnv_1.getEnv)('JWT_SECRET'));
             req.user = {
                 id: decoded.sub,
                 role: decoded.role,

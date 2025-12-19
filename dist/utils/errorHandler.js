@@ -26,11 +26,17 @@ const errorHandler = (err, _req, res, _next) => {
         message: error.message || 'Internal server error',
         ...(error instanceof ApiError && error.details ? { details: error.details } : {}),
     };
+    // Log errors (use proper logging service in production)
     if (process.env.NODE_ENV !== 'production') {
         console.error('Error:', error.message);
         if (error.stack) {
             console.error('Stack:', error.stack);
         }
+    }
+    else {
+        // In production, log to proper logging service
+        // TODO: Integrate with logging service (Winston, Pino, etc.)
+        console.error('Error:', error.message);
     }
     res.status(statusCode).json(payload);
 };

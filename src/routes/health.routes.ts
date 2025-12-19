@@ -3,7 +3,7 @@ import { getDb } from '../database/connection';
 
 const router = Router();
 
-router.get('/health', async (_req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
   try {
     // Check database connection
     const db = getDb();

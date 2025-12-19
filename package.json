@@ -2,28 +2,18 @@
   "name": "milkman-api",
   "version": "0.1.0",
   "description": "Module-based Milkman backend API",
-  "main": "dist/server.js",
+  "type": "module",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
-    "prestart": "npm run build",
-    "start": "node dist/server.js",
-    "migrate": "npm run build && knex --knexfile knexfile.js migrate:latest",
-    "migrate:rollback": "npm run build && knex --knexfile knexfile.js migrate:rollback",
-    "lint": "eslint \"src/**/*.ts\""
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "migrate": "node node_modules/.bin/knex --knexfile knexfile.js migrate:latest",
+    "migrate:rollback": "node node_modules/.bin/knex --knexfile knexfile.js migrate:rollback",
+    "lint": "eslint \"src/**/*.js\""
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/compression": "^1.7.5",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
-    "@types/jsonwebtoken": "^9.0.6",
-    "@types/morgan": "^1.9.7",
-    "@types/node": "^20.16.11",
-    "@types/node-cron": "^3.0.11",
-    "@types/pdfkit": "^0.13.6",
-    "ts-node-dev": "^2.0.0"
+    "eslint": "^8.0.0"
   },
   "dependencies": {
     "@react-navigation/bottom-tabs": "^7.8.5",

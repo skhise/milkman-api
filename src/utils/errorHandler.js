@@ -1,0 +1,39 @@
+export class ApiError extends Error {
+  constructor(message, statusCode = 500, details) {
+    super(message);
+    this.statusCode = statusCode;
+    this.details = details;
+  }
+}
+
+export const errorHandler = (err, _req, res, _next) => {
+  // Handle case where err might not be an Error instance
+  let error;
+  if (err instanceof Error) {
+    error = err;
+  } else if (err && typeof err === 'object' && 'message' in err) {
+    error = err;
+  } else {
+    error = new Error(String(err || 'Unknown error'));
+  }
+
+  const statusCode = error instanceof ApiError ? error.statusCode : 500;
+  const payload = {
+    message: error.message || 'Internal server error',
+    ...(error instanceof ApiError && error.details ? { details: error.details } : {}),
+  };
+
+  // Log errors (use proper logging service in production)
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('Error:', error.message);
+    if (error.stack) {
+      console.error('Stack:', error.stack);
+    }
+  } else {
+    // In production, log to proper logging service
+    // TODO: Integrate with logging service (Winston, Pino, etc.)
+    console.error('Error:', error.message);
+  }
+
+  res.status(statusCode).json(payload);
+};

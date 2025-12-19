@@ -22,11 +22,9 @@ declare class AuthService {
     requestPinReset(payload: unknown): Promise<{
         message: string;
         reference?: never;
-        otp?: never;
     } | {
         message: string;
         reference: `${string}-${string}-${string}-${string}-${string}`;
-        otp: string | undefined;
     }>;
     verifyOtp(payload: unknown): Promise<{
         reference: string;

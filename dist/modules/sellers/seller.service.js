@@ -578,6 +578,49 @@ class SellerService {
             throw error;
         }
     }
+    /**
+     * Expire subscriptions that have passed their end date
+     * This is called by a cron job to automatically expire subscriptions
+     */
+    async expireSubscriptions() {
+        const db = (0, connection_1.getDb)();
+        try {
+            // Find all active subscriptions that have passed their end date
+            const expiredSubscriptions = await db('seller_subscriptions')
+                .where({ status: 'active' })
+                .whereRaw('ends_at < NOW()')
+                .select('id', 'seller_id', 'plan_id');
+            let expiredCount = 0;
+            for (const subscription of expiredSubscriptions) {
+                // Update subscription status to expired
+                await db('seller_subscriptions')
+                    .where({ id: subscription.id })
+                    .update({
+                    status: 'expired',
+                    updated_at: db.fn.now(),
+                });
+                // Update seller's subscription status to trial if this was their active subscription
+                const seller = await db('sellers')
+                    .where({ id: subscription.seller_id, subscription_plan_id: subscription.plan_id })
+                    .first();
+                if (seller) {
+                    await db('sellers')
+                        .where({ id: subscription.seller_id })
+                        .update({
+                        subscription_status: 'trial',
+                        subscription_plan_id: null,
+                        updated_at: db.fn.now(),
+                    });
+                }
+                expiredCount++;
+            }
+            return { expiredCount, expiredSubscriptions: expiredSubscriptions.length };
+        }
+        catch (error) {
+            console.error('[SellerService] Error expiring subscriptions:', error);
+            throw error;
+        }
+    }
 }
 exports.sellerService = new SellerService();
 //# sourceMappingURL=seller.service.js.map

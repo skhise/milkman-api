@@ -15,7 +15,7 @@ const config = {
     max: 10,
   },
   migrations: {
-    directory: './dist/database/migrations',
+    directory: './src/database/migrations',
     tableName: 'knex_migrations',
     loadExtensions: ['.js'],
   },

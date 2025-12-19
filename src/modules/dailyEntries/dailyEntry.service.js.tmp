@@ -1,0 +1,332 @@
+﻿import { z } from 'zod';
+import { ApiError } from '../../utils/errorHandler';
+import { getDb } from '../../database/connection';
+import { randomUUID } from 'crypto';
+
+const listSchema = z.object({
+  dateFrom.string().optional(),
+  dateTo.string().optional(),
+  customerId.string().optional(),
+  status.enum(['delivered', 'not_delivered']).optional(),
+});
+
+const createSchema = z.object({
+  customerId.string().min(1, 'Customer ID is required'),
+  productId.string().optional(),
+  entryDate.string().optional(),
+  quantity.number().min(0, 'Quantity must be positive'),
+  unitAmount.number().optional(),
+  extraAmount.number().optional(),
+  delivered.boolean().optional(),
+  notes.string().optional(),
+});
+
+const updateSchema = z.object({
+  quantity.number().optional(),
+  extraQuantity.number().optional(),
+  delivered.boolean().optional(),
+  notes.string().optional(),
+  extraAmount.number().optional(),
+  productId.string().optional(),
+  unitAmount.number().optional(),
+});
+
+class DailyEntryService {
+  mapEntryRow(row) {
+    return {
+      id.id,
+      sellerId.seller_id,
+      customerId.customer_id,
+      productId.product_id,
+      entryDate.entry_date,
+      quantity(row.quantity),
+      extraQuantity.extra_quantity ? Number(row.extra_quantity) ,
+      unitAmount.unit_amount ? Number(row.unit_amount) ,
+      extraAmount.extra_amount ? Number(row.extra_amount) ,
+      delivered.delivered === 1 || row.delivered === true,
+      notes.notes,
+      createdAt.created_at,
+      updatedAt.updated_at,
+    };
+  }
+
+  async list(sellerId, filters) {
+    const params = listSchema.parse(filters ?? {});
+    if (!sellerId) {
+      throw new ApiError('sellerId required', 400);
+    }
+
+    const db = getDb();
+    const query = db('daily_entries').where('daily_entries.seller_id', sellerId);
+
+    if (params.customerId) {
+      query.where('daily_entries.customer_id', params.customerId);
+    }
+
+    if (params.dateFrom) {
+      query.where('daily_entries.entry_date', '>=', params.dateFrom);
+    }
+
+    if (params.dateTo) {
+      query.where('daily_entries.entry_date', '<=', params.dateTo);
+    }
+
+    if (params.status) {
+      query.where('daily_entries.delivered', params.status === 'delivered');
+    }
+
+    const rows = await query
+      .leftJoin('customers', 'daily_entries.customer_id', 'customers.id')
+      .leftJoin('products', 'daily_entries.product_id', 'products.id')
+      .select(
+        'daily_entries.*',
+        'customers.name ',
+        'customers.mobile ',
+        'products.name ',
+        'products.unit ',
+      )
+      .orderBy('daily_entries.entry_date', 'desc');
+
+    return rows.map((row) => ({
+      ...this.mapEntryRow(row),
+      customerName.customer_name,
+      customerMobile.customer_mobile,
+      productName.product_name,
+      productUnit.product_unit,
+    }));
+  }
+
+  async create(sellerId, payload) {
+    const data = createSchema.parse(payload);
+    const db = getDb();
+
+    if (!sellerId) {
+      throw new ApiError('Seller ID is required', 400);
+    }
+
+    // Resolve product
+    let product = null;
+    if (data.productId) {
+      product = await db('products')
+        .where({ id.productId, seller_id })
+        .first();
+      if (!product) {
+        throw new ApiError('Product not found for this seller', 404);
+      }
+    } else {
+      product = await db('products')
+        .where({ seller_id, name: 'Milk' })
+        .first();
+
+      if (!product) {
+        const productId = randomUUID();
+        await db('products').insert({
+          id,
+          seller_id,
+          name: 'Milk',
+          price_per_unit,
+          unit: 'litre',
+          status: 'active',
+        });
+        product = await db('products').where({ id }).first();
+      }
+    }
+
+    const entryDate = data.entryDate || new Date().toISOString().split('T')[0]!;
+    const entryId = randomUUID();
+    const unitAmount = data.unitAmount ?? Number(product?.price_per_unit ?? 0);
+
+    await db('daily_entries').insert({
+      id,
+      seller_id,
+      customer_id.customerId,
+      product_id!.id,
+      entry_date,
+      quantity.quantity,
+      unit_amount,
+      extra_amount.extraAmount || 0,
+      delivered.delivered ?? true,
+      notes.notes ?? null,
+    });
+
+    const entry = await db('daily_entries').where({ id }).first();
+    return this.mapEntryRow(entry);
+  }
+
+  async update(entryId, payload) {
+    const data = updateSchema.parse(payload);
+    const db = getDb();
+
+    const existing = await db('daily_entries').where({ id }).first();
+    if (!existing) {
+      throw new ApiError('Daily entry not found', 404);
+    }
+
+    let productIdToUse = existing.product_id;
+    let unitAmount = existing.unit_amount;
+
+    if (data.productId) {
+      const product = await db('products')
+        .where({ id.productId, seller_id.seller_id })
+        .first();
+      if (!product) {
+        throw new ApiError('Product not found for this seller', 404);
+      }
+      productIdToUse = product.id;
+      if (data.unitAmount === undefined) {
+        unitAmount = Number(product.price_per_unit ?? unitAmount ?? 0);
+      }
+    }
+
+    if (data.unitAmount !== undefined) {
+      unitAmount = data.unitAmount;
+    }
+
+    await db('daily_entries')
+      .where({ id })
+      .update({
+        quantity.quantity ?? existing.quantity,
+        extra_quantity.extraQuantity !== undefined ? data.extraQuantity .extra_quantity,
+        extra_amount.extraAmount !== undefined ? data.extraAmount .extra_amount,
+        delivered.delivered ?? existing.delivered,
+        notes.notes ?? existing.notes,
+        unit_amount,
+        product_id,
+        updated_at.fn.now(),
+      });
+
+    const updated = await db('daily_entries').where({ id }).first();
+    return this.mapEntryRow(updated);
+  }
+
+  async delete(entryId) {
+    const db = getDb();
+    const existing = await db('daily_entries').where({ id }).first();
+    if (!existing) {
+      throw new ApiError('Daily entry not found', 404);
+    }
+
+    await db('daily_entries').where({ id }).delete();
+    return { success };
+  }
+
+  async markDelivery(entryId, payload) {
+    const data = updateSchema.parse(payload);
+    return this.update(entryId, { ...data, delivered.delivered ?? true });
+  }
+
+  async generateDailyEntriesForSeller(sellerId, entryDate) {
+    const db = getDb();
+    const seller = await db('sellers').where({ id }).first();
+    if (!seller) {
+      throw new ApiError('Seller not found', 404);
+    }
+
+    // Get all active customers for this seller
+    const customers = await db('customers')
+      .where({ seller_id, active })
+      .whereNull('exited_at')
+      .where((builder) => {
+        builder.whereNull('freeze_until').orWhere('freeze_until', '>', entryDate);
+      });
+
+    if (customers.length === 0) {
+      return { generated, skipped };
+    }
+
+    let generated = 0;
+    let skipped = 0;
+
+    for (const customer of customers) {
+      const pauseFrom = customer.pause_from  | null;
+      const pauseTo = customer.pause_to  | null;
+      const isPaused =
+        (pauseFrom && !pauseTo && pauseFrom <= entryDate) ||
+        (!pauseFrom && pauseTo && pauseTo >= entryDate) ||
+        (pauseFrom && pauseTo && pauseFrom <= entryDate && pauseTo >= entryDate);
+
+      if (isPaused) {
+        skipped++;
+        continue;
+      }
+
+      // Get customer products with auto_entry enabled
+      const customerProducts = await db('customer_products')
+        .where({ customer_id.id, active, auto_entry })
+        .join('products', 'customer_products.product_id', 'products.id')
+        .select(
+          'customer_products.product_id',
+          'customer_products.quantity',
+          'products.price_per_unit',
+          'products.unit'
+        );
+
+      if (customerProducts.length === 0) {
+        skipped++;
+        continue;
+      }
+
+      // Generate entries for each product with auto_entry enabled
+      for (const cp of customerProducts) {
+        // Check if entry already exists for this date and product
+        const existing = await db('daily_entries')
+          .where({
+            seller_id,
+            customer_id.id,
+            product_id.product_id,
+            entry_date,
+          })
+          .first();
+
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        const entryId = randomUUID();
+        await db('daily_entries').insert({
+          id,
+          seller_id,
+          customer_id.id,
+          product_id.product_id,
+          entry_date,
+          quantity.quantity,
+          unit_amount(cp.price_per_unit ?? 0),
+          extra_amount,
+          delivered,
+        });
+
+        generated++;
+      }
+    }
+
+    return { generated, skipped };
+  }
+
+  async generateDailyEntriesForAllSellers(entryDate?) {
+    const db = getDb();
+    const date = entryDate || new Date().toISOString().split('T')[0]!;
+
+    const sellers = await db('sellers').where({ status: 'active' });
+    const results = [];
+
+    for (const seller of sellers) {
+      try {
+        const result = await this.generateDailyEntriesForSeller(seller.id, date);
+        results.push({
+          sellerId.id,
+          ...result,
+        });
+      } catch (error) {
+        results.push({
+          sellerId.id,
+          error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return { date, results };
+  }
+}
+
+export const dailyEntryService = new DailyEntryService();
